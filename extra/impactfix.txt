@@ -7,19 +7,19 @@
 			"CBaseEntity::WorldSpaceCenter"
 			{
 				"linux"		"162"
-				"windows"	"163"
+				"windows"	"161"
 			}
 
 			"CBaseEntity::GetVectors"
 			{
 				"linux"		"147"
-				"windows"	"148"
+				"windows"	"146"
 			}
 			
 			"CBasePlayer::PlayerSolidMask"
 			{
 				"linux"		"488"
-				"windows"	"489"
+				"windows"	"487"
 			}
 		}
 

@@ -1,6 +1,6 @@
 Description
 ------
-SourceMod extension that improves impact detection while charging against immovable entities.
+SourceMod extension that improves impact detection while charging against immovable props.
 
 Video Demonstration
 ------
@@ -21,4 +21,4 @@ Installation
 
 Fixed Issues
 ------
-- Charger now will correctly impact against immovable entities, a physics mass of which is less than 250
+- Charger now will correctly impact against immovable props, physics mass of which is less than 250

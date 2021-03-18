@@ -50,18 +50,30 @@ private:
 	ShouldHitFunc_t m_pExtraShouldHitCheckFunction;
 };
 
-class CBaseEntity
+class CBaseEntity :
+	public IServerEntity
 {
 public:
 	static int sendprop_movetype;
 
 	static int dataprop_m_pPhysicsObject;
+	static int dataprop_m_lifeState;
 
 	static int vtblindex_WorldSpaceCenter;
 	static int vtblindex_GetVectors;
 
 	static ICallWrapper* vcall_WorldSpaceCenter;
 	static ICallWrapper* vcall_GetVectors;
+
+	edict_t* edict()
+	{
+		return gameents->BaseEntityToEdict(this);
+	}
+
+	int entindex()
+	{
+		return gamehelpers->EntityToBCompatRef(this);
+	}
 
 	const Vector& WorldSpaceCenter() const
 	{
@@ -90,7 +102,7 @@ public:
 	IPhysicsObject* VPhysicsGetObject()
 	{
 		if (CBaseEntity::dataprop_m_pPhysicsObject == 0) {
-			datamap_t* pDataMap = gamehelpers->GetDataMap(this);
+			datamap_t* pDataMap = gamehelpers->GetDataMap(const_cast<CBaseEntity*>(this));
 			if (pDataMap == NULL) {
 				return NULL;
 			}
@@ -115,6 +127,32 @@ public:
 	{
 		return gamehelpers->GetEntityClassname(this);
 	}
+
+	char& m_lifeState()
+	{
+		static char cMissing = LIFE_DEAD;
+
+		if (CBaseEntity::dataprop_m_lifeState == 0) {
+			datamap_t* pDataMap = gamehelpers->GetDataMap(const_cast<CBaseEntity*>(this));
+			if (pDataMap == NULL) {
+				return cMissing;
+			}
+
+			sm_datatable_info_t info;
+			if (!gamehelpers->FindDataMapInfo(pDataMap, "m_lifeState", &info)) {
+				return cMissing;
+			}
+
+			CBaseEntity::dataprop_m_lifeState = info.actual_offset;
+		}
+
+		return *(char*)((byte*)(this) + CBaseEntity::dataprop_m_lifeState);
+	}
+
+	bool IsAlive()
+	{
+		return m_lifeState() == LIFE_ALIVE;
+	}
 };
 
 class CBasePlayer :
@@ -132,7 +170,7 @@ public:
 		return *(int*)((byte*)(this) + CBasePlayer::sendprop_m_fFlags);
 	}
 
-	unsigned int PlayerSolidMask(bool brushOnly)
+	unsigned int PlayerSolidMask(bool brushOnly = false)
 	{
 		struct {
 			const CBasePlayer* pPlayer;

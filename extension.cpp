@@ -17,6 +17,7 @@ ICallWrapper* CBaseEntity::vcall_WorldSpaceCenter = NULL;
 int CBaseEntity::vtblindex_GetVectors = 0;
 ICallWrapper* CBaseEntity::vcall_GetVectors = NULL;
 int CBaseEntity::dataprop_m_pPhysicsObject = 0;
+int CBaseEntity::dataprop_m_lifeState = 0;
 int CBaseEntity::sendprop_movetype = 0;
 void* CCharge::pfn_DoImpactProbe = NULL;
 CDetour* CCharge::detour_DoImpactProbe = NULL;
@@ -25,9 +26,6 @@ int CBasePlayer::sendprop_m_fFlags = 0;
 int CTerrorPlayer::sendprop_m_carryVictim = 0;
 int CBasePlayer::vtblindex_PlayerSolidMask = 0;
 ICallWrapper* CBasePlayer::vcall_PlayerSolidMask = NULL;
-
-ConVarRef z_charger_probe_alone("z_charger_probe_alone");
-ConVarRef z_charger_probe_attack("z_charger_probe_attack");
 
 void UTIL_TraceHull(const Vector& vecAbsStart, const Vector& vecAbsEnd, const Vector& hullMin, const Vector& hullMax, unsigned int mask, const IHandleEntity* ignore, int collisionGroup, trace_t* ptr)
 {
@@ -118,6 +116,8 @@ void CCharge::DoImpactProbe()
 */
 DETOUR_DECL_MEMBER0(Handler_CCharge_DoImpactProbe, void)
 {
+	static ConVarRef z_charger_probe_attack("z_charger_probe_attack");
+
 	int hookId = 0;
 	CCharge* _this = (CCharge*)this;
 
@@ -135,14 +135,55 @@ DETOUR_DECL_MEMBER0(Handler_CCharge_DoImpactProbe, void)
 	Vector vecForward;
 	pCharger->GetVectors(&vecForward, NULL, NULL);
 
+	static ConVarRef z_charger_probe_alone("z_charger_probe_alone");
 	float flProbeDistance = z_charger_probe_alone.GetFloat();
-	unsigned int mask = pCharger->PlayerSolidMask(false);
+	unsigned int mask = pCharger->PlayerSolidMask();
 
 	CBasePlayer* pCarryVictim = pCharger->GetCarryVictim();
 	if (pCarryVictim != NULL) {
-		mask |= pCarryVictim->PlayerSolidMask(false);
+		static ConVarRef z_charger_probe_attack("z_charger_probe_attack");
 		flProbeDistance = z_charger_probe_attack.GetFloat();
+
+		mask |= pCarryVictim->PlayerSolidMask();
 	}
+
+	/*
+	c2m2 custom immovable prop dynamic
+	Hit: 1706 (prop_dynamic)
+        Movetype: 7
+        Moveable: false
+        Model: models/props_misc/fairground_tent_closed.mdl
+
+	c1m1 death charge glass
+	Hit: 233 (prop_physics)
+		Movetype: 6
+		Moveable: false
+		Model: models/props_windows/hotel_window_glass001.mdl
+
+	c10m4 breakable window
+	Hit: 375 (prop_physics)
+		Movetype: 6
+		Moveable: false
+		Model: models/props_windows/window_industrial.mdl
+
+	c10m4 breakable wooden door near bus
+	Hit: 283 (func_breakable)
+		Movetype: 7
+		Moveable: false
+		Model: *75
+
+	c1m4 unbreakable window by charger
+	Hit: 160 (func_breakable)
+		Movetype: 7
+		Moveable: false
+		Model: *92
+
+	c2m2 hittables
+	Hit: 840 (prop_physics)
+		Movetype: 6
+		Moveable: true
+		Model: models/props_street/trashbin01.mdl
+	*/
 
 	trace_t	tr;
 	UTIL_TraceHull(vecStart, vecStart + vecForward * flProbeDistance, Vector(-15, -15, -12), Vector(15, 15, 24), mask, NULL, COLLISION_GROUP_PLAYER_MOVEMENT, &tr);
@@ -151,18 +192,32 @@ DETOUR_DECL_MEMBER0(Handler_CCharge_DoImpactProbe, void)
 		if (pIPhysicsObject != NULL) {
 			bool bDoDamageToACarAlarmCondition = pCarryVictim != NULL && strcmp(tr.m_pEnt->GetClassname(), "prop_car_alarm") == 0;
 			bool bDoDamageToALowMassPropCondition = !bDoDamageToACarAlarmCondition && pIPhysicsObject->GetMass() < 250.0;
-			bool bCanBeMoved = tr.m_pEnt->GetMoveType() == MOVETYPE_VPHYSICS && pIPhysicsObject->IsMoveable();
+			bool bIsNotMoveable = tr.m_pEnt->GetMoveType() != MOVETYPE_VPHYSICS || !pIPhysicsObject->IsMoveable();
 
-			//DevMsg("Ent %d calrm: %s lowmassprop: %s canbemvd: %s mv: %d\n",
-			//	gamehelpers->EntityToBCompatRef(tr.m_pEnt),
-			//	bDoDamageToACarAlarmCondition ? "true" : "false",
-			//	bDoDamageToALowMassPropCondition ? "true" : "false",
-			//	bCanBeMoved ? "true" : "false",
-			//	tr.m_pEnt->GetMoveType());
+			if (bDoDamageToALowMassPropCondition) {
+				//DevMsg
+				//(
+				//	"Hit: %d (%s)\n"
+				//	"	Movetype: %d\n"
+				//	"	Moveable: %s\n"
+				//	"	Model: %s\n",
+				//	tr.m_pEnt->entindex(),
+				//	tr.m_pEnt->GetClassname(),
+				//	tr.m_pEnt->GetMoveType(),
+				//	pIPhysicsObject->IsMoveable() ? "true" : "false",
+				//	tr.m_pEnt->GetModelName()
+				//);
 
-			if (bDoDamageToALowMassPropCondition && !bCanBeMoved) {
-				// If prop wont move but a condition "DoDamageToALowMassPropCondition" is going to be hit - break condition by overriding mass on its physics object >= 250.0
-				hookId = SH_ADD_HOOK(IPhysicsObject, GetMass, pIPhysicsObject, SH_MEMBER(&g_ImpactFix, &CImpactFix::Handler_IPhysicsObject_GetMass), false);
+				// https://github.com/ValveSoftware/source-sdk-2013/blob/f56bb35301836e56582a575a75864392a0177875/mp/src/game/server/physics.cpp#L2181
+				if (bIsNotMoveable) {
+					// Call original second time - it will damage a prop (low mass prop condition is going to be hit and return early)
+					DETOUR_MEMBER_CALL(Handler_CCharge_DoImpactProbe)();
+
+					if (tr.m_pEnt->IsAlive()) {
+						// If prop still exists - do impact (break condition by overriding mass on its physics object >= 250.0)
+						hookId = SH_ADD_HOOK(IPhysicsObject, GetMass, pIPhysicsObject, SH_MEMBER(&g_ImpactFix, &CImpactFix::Handler_IPhysicsObject_GetMass), false);
+					}
+				}
 			}
 		}
 	}
@@ -177,7 +232,7 @@ float CImpactFix::Handler_IPhysicsObject_GetMass() const
 	RETURN_META_VALUE(MRES_SUPERCEDE, 250.0);
 }
 
-bool CImpactFix::SetupFromGameConfigs(IGameConfig* gc, char* error, int maxlength)
+bool CImpactFix::SetupFromGameConfig(IGameConfig* gc, char* error, int maxlength)
 {
 	static const struct {
 		const char* key;
@@ -261,7 +316,7 @@ bool CImpactFix::SDK_OnLoad(char* error, size_t maxlength, bool late)
 		return false;
 	}
 
-	if (!SetupFromGameConfigs(gc, error, maxlength)) {
+	if (!SetupFromGameConfig(gc, error, maxlength)) {
 		gameconfs->CloseGameConfigFile(gc);
 
 		return false;
@@ -315,6 +370,9 @@ void CImpactFix::SDK_OnUnload()
 void CImpactFix::SDK_OnAllLoaded()
 {
 	SM_GET_LATE_IFACE(BINTOOLS, bintools);
+	if (bintools == NULL) {
+		return;
+	}
 
 	SourceMod::PassInfo params[] = {
 #if SMINTERFACE_BINTOOLS_VERSION == 4
@@ -391,6 +449,9 @@ bool CImpactFix::SDK_OnMetamodLoad(ISmmAPI* ismm, char* error, size_t maxlen, bo
 {
 	GET_V_IFACE_CURRENT(GetServerFactory, gameents, IServerGameEnts, INTERFACEVERSION_SERVERGAMEENTS);
 	GET_V_IFACE_CURRENT(GetEngineFactory, enginetrace, IEngineTrace, INTERFACEVERSION_ENGINETRACE_SERVER);
+
+	// For ConVarRef
+	GET_V_IFACE_CURRENT(GetEngineFactory, g_pCVar, ICvar, CVAR_INTERFACE_VERSION);
 
 	return true;
 }

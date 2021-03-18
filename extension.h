@@ -15,7 +15,7 @@ public: // SourceHook callbacks
 	float Handler_IPhysicsObject_GetMass() const;
 
 protected:
-	bool SetupFromGameConfigs(IGameConfig* gc, char* error, int maxlength);
+	bool SetupFromGameConfig(IGameConfig* gc, char* error, int maxlength);
 
 public:
 	/**
