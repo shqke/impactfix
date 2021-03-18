@@ -116,8 +116,6 @@ void CCharge::DoImpactProbe()
 */
 DETOUR_DECL_MEMBER0(Handler_CCharge_DoImpactProbe, void)
 {
-	static ConVarRef z_charger_probe_attack("z_charger_probe_attack");
-
 	int hookId = 0;
 	CCharge* _this = (CCharge*)this;
 
