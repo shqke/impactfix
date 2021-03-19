@@ -4,7 +4,7 @@ SourceMod extension that improves impact detection while charging against immova
 
 Video Demonstration
 ------
-[![Charger impact against immovable props PoC](http://img.youtube.com/vi/MyFPqJOk5gc/default.jpg)](https://www.youtube.com/watch?v=MyFPqJOk5gc "Charger impact against immovable props PoC")
+[![Charger impact against immovable props PoC](http://img.youtube.com/vi/TJ6Twi9qg68/default.jpg)](https://www.youtube.com/watch?v=TJ6Twi9qg68 "Charger impact against immovable props PoC")
 
 Requirements
 ------
