@@ -181,6 +181,15 @@ DETOUR_DECL_MEMBER0(Handler_CCharge_DoImpactProbe, void)
 		Movetype: 6
 		Moveable: true
 		Model: models/props_street/trashbin01.mdl
+
+	c10m5 moveable physics prop but not affected by damage
+	Hit: 261 (prop_physics)
+		Movetype: 6
+		Alive: true
+		Moveable: true
+		Motion Enabled: true
+		Asleep: true
+		Model: models/props_interiors/table_picnic.mdl
 	*/
 
 	trace_t	tr;
@@ -193,35 +202,38 @@ DETOUR_DECL_MEMBER0(Handler_CCharge_DoImpactProbe, void)
 			bool bIsNotMoveable = tr.m_pEnt->GetMoveType() != MOVETYPE_VPHYSICS || !pIPhysicsObject->IsMoveable();
 
 			if (bDoDamageToALowMassPropCondition) {
+				// Call original second time - it will damage a prop (low mass prop condition is going to be hit and return early)
+				DETOUR_MEMBER_CALL(Handler_CCharge_DoImpactProbe)();
+
+				// https://github.com/ValveSoftware/source-sdk-2013/blob/f56bb35301836e56582a575a75864392a0177875/mp/src/game/server/physics.cpp#L2181
+				if (tr.m_pEnt->IsAlive() && (bIsNotMoveable || pIPhysicsObject->IsAsleep())) {
+					// If prop still exists - do impact (break condition by overriding mass on its physics object >= 250.0)
+					// Prop must be immovable or still asleep after receiving damage
+					hookId = SH_ADD_HOOK(IPhysicsObject, GetMass, pIPhysicsObject, SH_MEMBER(&g_ImpactFix, &CImpactFix::Handler_IPhysicsObject_GetMass), false);
+				}
+
 				//DevMsg
 				//(
 				//	"Hit: %d (%s)\n"
 				//	"	Movetype: %d\n"
 				//	"	Moveable: %s\n"
+				//	"	Asleep: %s\n"
+				//	"	IsAlive: %s\n"
 				//	"	Model: %s\n",
 				//	tr.m_pEnt->entindex(),
 				//	tr.m_pEnt->GetClassname(),
 				//	tr.m_pEnt->GetMoveType(),
 				//	pIPhysicsObject->IsMoveable() ? "true" : "false",
+				//	pIPhysicsObject->IsAsleep() ? "true" : "false",
+				//	tr.m_pEnt->IsAlive() ? "true" : "false",
 				//	tr.m_pEnt->GetModelName()
 				//);
-
-				// https://github.com/ValveSoftware/source-sdk-2013/blob/f56bb35301836e56582a575a75864392a0177875/mp/src/game/server/physics.cpp#L2181
-				if (bIsNotMoveable) {
-					// Call original second time - it will damage a prop (low mass prop condition is going to be hit and return early)
-					DETOUR_MEMBER_CALL(Handler_CCharge_DoImpactProbe)();
-
-					if (tr.m_pEnt->IsAlive()) {
-						// If prop still exists - do impact (break condition by overriding mass on its physics object >= 250.0)
-						hookId = SH_ADD_HOOK(IPhysicsObject, GetMass, pIPhysicsObject, SH_MEMBER(&g_ImpactFix, &CImpactFix::Handler_IPhysicsObject_GetMass), false);
-					}
-				}
 			}
 		}
 	}
 
 	DETOUR_MEMBER_CALL(Handler_CCharge_DoImpactProbe)();
-
+	
 	SH_REMOVE_HOOK_ID(hookId);
 }
 
