@@ -99,23 +99,29 @@ public:
 		vcall_GetVectors->Execute(&stack, NULL);
 	}
 
-	IPhysicsObject* VPhysicsGetObject()
+	IPhysicsObject*& m_pPhysicsObject()
 	{
+		static IPhysicsObject* s_invalid = NULL;
 		if (CBaseEntity::dataprop_m_pPhysicsObject == 0) {
 			datamap_t* pDataMap = gamehelpers->GetDataMap(const_cast<CBaseEntity*>(this));
 			if (pDataMap == NULL) {
-				return NULL;
+				return s_invalid;
 			}
 
 			sm_datatable_info_t info;
 			if (!gamehelpers->FindDataMapInfo(pDataMap, "m_pPhysicsObject", &info)) {
-				return NULL;
+				return s_invalid;
 			}
 
 			CBaseEntity::dataprop_m_pPhysicsObject = info.actual_offset;
 		}
 
 		return *(IPhysicsObject**)((byte*)(this) + CBaseEntity::dataprop_m_pPhysicsObject);
+	}
+
+	IPhysicsObject* VPhysicsGetObject()
+	{
+		return m_pPhysicsObject();
 	}
 
 	MoveType_t GetMoveType()

@@ -3,8 +3,8 @@
 
 #define SMEXT_CONF_NAME			"[L4D2] Charger Impact Fix"
 #define SMEXT_CONF_DESCRIPTION	"Fixes some issues related to charging against immovable props"
-#define SMEXT_CONF_VERSION		"1.2"
-#define SMEXT_CONF_AUTHOR		"shqke"
+#define SMEXT_CONF_VERSION		"1.3"
+#define SMEXT_CONF_AUTHOR		"Evgeniy \"shqke\" Kazakov"
 #define SMEXT_CONF_URL			"https://github.com/shqke/impactfix"
 #define SMEXT_CONF_LOGTAG		"impactfix"
 #define SMEXT_CONF_LICENSE		"GPL"

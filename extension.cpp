@@ -199,14 +199,14 @@ DETOUR_DECL_MEMBER0(Handler_CCharge_DoImpactProbe, void)
 		if (pIPhysicsObject != NULL) {
 			bool bDoDamageToACarAlarmCondition = pCarryVictim != NULL && strcmp(tr.m_pEnt->GetClassname(), "prop_car_alarm") == 0;
 			bool bDoDamageToALowMassPropCondition = !bDoDamageToACarAlarmCondition && pIPhysicsObject->GetMass() < 250.0;
-			bool bIsNotMoveable = tr.m_pEnt->GetMoveType() != MOVETYPE_VPHYSICS || !pIPhysicsObject->IsMoveable();
+			bool bIsMoveable = tr.m_pEnt->GetMoveType() == MOVETYPE_VPHYSICS && pIPhysicsObject->IsMoveable();
 
 			if (bDoDamageToALowMassPropCondition) {
 				// Call original second time - it will damage a prop (low mass prop condition is going to be hit and return early)
 				DETOUR_MEMBER_CALL(Handler_CCharge_DoImpactProbe)();
 
 				// https://github.com/ValveSoftware/source-sdk-2013/blob/f56bb35301836e56582a575a75864392a0177875/mp/src/game/server/physics.cpp#L2181
-				if (tr.m_pEnt->IsAlive() && (bIsNotMoveable || pIPhysicsObject->IsAsleep())) {
+				if (tr.m_pEnt->IsAlive() && (!bIsMoveable || pIPhysicsObject->IsAsleep())) {
 					// If prop still exists - do impact (break condition by overriding mass on its physics object >= 250.0)
 					// Prop must be immovable or still asleep after receiving damage
 					hookId = SH_ADD_HOOK(IPhysicsObject, GetMass, pIPhysicsObject, SH_MEMBER(&g_ImpactFix, &CImpactFix::Handler_IPhysicsObject_GetMass), false);
@@ -323,6 +323,8 @@ bool CImpactFix::SDK_OnLoad(char* error, size_t maxlength, bool late)
 
 	IGameConfig* gc = NULL;
 	if (!gameconfs->LoadGameConfigFile(GAMEDATA_FILE, &gc, error, maxlength)) {
+		ke::SafeStrcpy(error, maxlength, "Unable to load a gamedata file \"" GAMEDATA_FILE ".txt\"");
+
 		return false;
 	}
 
