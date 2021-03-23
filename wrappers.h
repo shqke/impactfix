@@ -136,17 +136,17 @@ public:
 
 	char& m_lifeState()
 	{
-		static char cMissing = LIFE_DEAD;
+		static char s_invalid = LIFE_DEAD;
 
 		if (CBaseEntity::dataprop_m_lifeState == 0) {
 			datamap_t* pDataMap = gamehelpers->GetDataMap(const_cast<CBaseEntity*>(this));
 			if (pDataMap == NULL) {
-				return cMissing;
+				return s_invalid;
 			}
 
 			sm_datatable_info_t info;
 			if (!gamehelpers->FindDataMapInfo(pDataMap, "m_lifeState", &info)) {
-				return cMissing;
+				return s_invalid;
 			}
 
 			CBaseEntity::dataprop_m_lifeState = info.actual_offset;
