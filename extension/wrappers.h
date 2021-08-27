@@ -18,7 +18,6 @@ class CTraceFilterSimple :
 {
 public:
 	static void* pfn_ctor;
-
 	static ICallWrapper* call_ctor;
 
 public:

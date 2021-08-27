@@ -1,8 +1,8 @@
 #include "extension.h"
 #include <CDetour/detours.h>
 
-CImpactFix g_ImpactFix;
-SMEXT_LINK(&g_ImpactFix);
+CExtension g_Extension;
+SMEXT_LINK(&g_Extension);
 
 SH_DECL_HOOK0(IPhysicsObject, GetMass, const, 0, float);
 
@@ -96,7 +96,7 @@ void CCharge::DoImpactProbe()
 			return;
 		}
 
-		if ( fabs( tr.plane.normal.Dot( forward ) ) <= z_charge_impact_angle.GetFloat() )
+		if ( fabs( tr.plane.normal.Dot( vecForward ) ) <= z_charge_impact_angle.GetFloat() )
 		{
 			return;
 		}
@@ -145,53 +145,6 @@ DETOUR_DECL_MEMBER0(Handler_CCharge_DoImpactProbe, void)
 		mask |= pCarryVictim->PlayerSolidMask();
 	}
 
-	/*
-	c2m2 custom immovable prop dynamic
-	Hit: 1706 (prop_dynamic)
-        Movetype: 7
-        Moveable: false
-        Model: models/props_misc/fairground_tent_closed.mdl
-
-	c1m1 death charge glass
-	Hit: 233 (prop_physics)
-		Movetype: 6
-		Moveable: false
-		Model: models/props_windows/hotel_window_glass001.mdl
-
-	c10m4 breakable window
-	Hit: 375 (prop_physics)
-		Movetype: 6
-		Moveable: false
-		Model: models/props_windows/window_industrial.mdl
-
-	c10m4 breakable wooden door near bus
-	Hit: 283 (func_breakable)
-		Movetype: 7
-		Moveable: false
-		Model: *75
-
-	c1m4 unbreakable window by charger
-	Hit: 160 (func_breakable)
-		Movetype: 7
-		Moveable: false
-		Model: *92
-
-	c2m2 hittables
-	Hit: 840 (prop_physics)
-		Movetype: 6
-		Moveable: true
-		Model: models/props_street/trashbin01.mdl
-
-	c10m5 moveable physics prop but not affected by damage
-	Hit: 261 (prop_physics)
-		Movetype: 6
-		Alive: true
-		Moveable: true
-		Motion Enabled: true
-		Asleep: true
-		Model: models/props_interiors/table_picnic.mdl
-	*/
-
 	trace_t	tr;
 	UTIL_TraceHull(vecStart, vecStart + vecForward * flProbeDistance, Vector(-15, -15, -12), Vector(15, 15, 24), mask, NULL, COLLISION_GROUP_PLAYER_MOVEMENT, &tr);
 	if (tr.m_pEnt != NULL) {
@@ -199,35 +152,54 @@ DETOUR_DECL_MEMBER0(Handler_CCharge_DoImpactProbe, void)
 		if (pIPhysicsObject != NULL) {
 			bool bDoDamageToACarAlarmCondition = pCarryVictim != NULL && strcmp(tr.m_pEnt->GetClassname(), "prop_car_alarm") == 0;
 			bool bDoDamageToALowMassPropCondition = !bDoDamageToACarAlarmCondition && pIPhysicsObject->GetMass() < 250.0;
-			bool bIsMoveable = tr.m_pEnt->GetMoveType() == MOVETYPE_VPHYSICS && pIPhysicsObject->IsMoveable();
 
 			if (bDoDamageToALowMassPropCondition) {
-				// Call original second time - it will damage a prop (low mass prop condition is going to be hit and return early)
-				DETOUR_MEMBER_CALL(Handler_CCharge_DoImpactProbe)();
-
-				// https://github.com/ValveSoftware/source-sdk-2013/blob/f56bb35301836e56582a575a75864392a0177875/mp/src/game/server/physics.cpp#L2181
-				if (tr.m_pEnt->IsAlive() && (!bIsMoveable || pIPhysicsObject->IsAsleep())) {
-					// If prop still exists - do impact (break condition by overriding mass on its physics object >= 250.0)
-					// Prop must be immovable or still asleep after receiving damage
-					hookId = SH_ADD_HOOK(IPhysicsObject, GetMass, pIPhysicsObject, SH_MEMBER(&g_ImpactFix, &CImpactFix::Handler_IPhysicsObject_GetMass), false);
-				}
-
 				//DevMsg
 				//(
-				//	"Hit: %d (%s)\n"
+				//	"Hit: %d (\"%s\")\n"
 				//	"	Movetype: %d\n"
-				//	"	Moveable: %s\n"
+				//	"	Motion Enabled: %s\n"
+				//	"	Static: %s\n"
 				//	"	Asleep: %s\n"
 				//	"	IsAlive: %s\n"
-				//	"	Model: %s\n",
+				//	"	Model: \"%s\"\n",
 				//	tr.m_pEnt->entindex(),
 				//	tr.m_pEnt->GetClassname(),
 				//	tr.m_pEnt->GetMoveType(),
-				//	pIPhysicsObject->IsMoveable() ? "true" : "false",
+				//	pIPhysicsObject->IsMotionEnabled() ? "true" : "false",
+				//	pIPhysicsObject->IsStatic() ? "true" : "false",
 				//	pIPhysicsObject->IsAsleep() ? "true" : "false",
 				//	tr.m_pEnt->IsAlive() ? "true" : "false",
 				//	tr.m_pEnt->GetModelName()
 				//);
+
+				// Call original - it will damage a prop (low mass prop condition is going to be hit and return early)
+				DETOUR_MEMBER_CALL(Handler_CCharge_DoImpactProbe)();
+
+				//DevMsg
+				//(
+				//	"Post Hit: %d (\"%s\")\n"
+				//	"	Movetype: %d\n"
+				//	"	Motion Enabled: %s\n"
+				//	"	Static: %s\n"
+				//	"	Asleep: %s\n"
+				//	"	IsAlive: %s\n"
+				//	"	Model: \"%s\"\n",
+				//	tr.m_pEnt->entindex(),
+				//	tr.m_pEnt->GetClassname(),
+				//	tr.m_pEnt->GetMoveType(),
+				//	pIPhysicsObject->IsMotionEnabled() ? "true" : "false",
+				//	pIPhysicsObject->IsStatic() ? "true" : "false",
+				//	pIPhysicsObject->IsAsleep() ? "true" : "false",
+				//	tr.m_pEnt->IsAlive() ? "true" : "false",
+				//	tr.m_pEnt->GetModelName()
+				//);
+
+				// https://github.com/ValveSoftware/source-sdk-2013/blob/f56bb35301836e56582a575a75864392a0177875/mp/src/game/server/physics.cpp#L2181
+				if (tr.m_pEnt->IsAlive() && pIPhysicsObject->IsAsleep()) {
+					// If prop is still alive and asleep after receiving damage - end charge impact (break condition by overriding mass on its physics object >= 250.0)
+					hookId = SH_ADD_HOOK(IPhysicsObject, GetMass, pIPhysicsObject, SH_MEMBER(&g_Extension, &CExtension::Handler_IPhysicsObject_GetMass), false);
+				}
 			}
 		}
 	}
@@ -237,12 +209,12 @@ DETOUR_DECL_MEMBER0(Handler_CCharge_DoImpactProbe, void)
 	SH_REMOVE_HOOK_ID(hookId);
 }
 
-float CImpactFix::Handler_IPhysicsObject_GetMass() const
+float CExtension::Handler_IPhysicsObject_GetMass() const
 {
 	RETURN_META_VALUE(MRES_SUPERCEDE, 250.0);
 }
 
-bool CImpactFix::SetupFromGameConfig(IGameConfig* gc, char* error, int maxlength)
+bool CExtension::SetupFromGameConfig(IGameConfig* gc, char* error, int maxlength)
 {
 	static const struct {
 		const char* key;
@@ -286,7 +258,7 @@ bool CImpactFix::SetupFromGameConfig(IGameConfig* gc, char* error, int maxlength
 	return true;
 }
 
-bool CImpactFix::SDK_OnLoad(char* error, size_t maxlength, bool late)
+bool CExtension::SDK_OnLoad(char* error, size_t maxlength, bool late)
 {
 	sm_sendprop_info_t info;
 	if (!gamehelpers->FindSendPropInfo("CBaseEntity", "movetype", &info)) {
@@ -351,7 +323,7 @@ bool CImpactFix::SDK_OnLoad(char* error, size_t maxlength, bool late)
 	return true;
 }
 
-void CImpactFix::SDK_OnUnload()
+void CExtension::SDK_OnUnload()
 {
 	if (CTraceFilterSimple::call_ctor != NULL) {
 		CTraceFilterSimple::call_ctor->Destroy();
@@ -379,7 +351,7 @@ void CImpactFix::SDK_OnUnload()
 	}
 }
 
-void CImpactFix::SDK_OnAllLoaded()
+void CExtension::SDK_OnAllLoaded()
 {
 	SM_GET_LATE_IFACE(BINTOOLS, bintools);
 	if (bintools == NULL) {
@@ -440,28 +412,28 @@ void CImpactFix::SDK_OnAllLoaded()
 	CCharge::detour_DoImpactProbe->EnableDetour();
 }
 
-bool CImpactFix::QueryInterfaceDrop(SMInterface* pInterface)
+bool CExtension::QueryInterfaceDrop(SMInterface* pInterface)
 {
 	return pInterface != bintools;
 }
 
-void CImpactFix::NotifyInterfaceDrop(SMInterface* pInterface)
+void CExtension::NotifyInterfaceDrop(SMInterface* pInterface)
 {
 	SDK_OnUnload();
 }
 
-bool CImpactFix::QueryRunning(char* error, size_t maxlength)
+bool CExtension::QueryRunning(char* error, size_t maxlength)
 {
 	SM_CHECK_IFACE(BINTOOLS, bintools);
 
 	return true;
 }
 
-bool CImpactFix::SDK_OnMetamodLoad(ISmmAPI* ismm, char* error, size_t maxlen, bool late)
+bool CExtension::SDK_OnMetamodLoad(ISmmAPI* ismm, char* error, size_t maxlen, bool late)
 {
 	GET_V_IFACE_CURRENT(GetServerFactory, gameents, IServerGameEnts, INTERFACEVERSION_SERVERGAMEENTS);
 	GET_V_IFACE_CURRENT(GetEngineFactory, enginetrace, IEngineTrace, INTERFACEVERSION_ENGINETRACE_SERVER);
-
+	
 	// For ConVarRef
 	GET_V_IFACE_CURRENT(GetEngineFactory, g_pCVar, ICvar, CVAR_INTERFACE_VERSION);
 

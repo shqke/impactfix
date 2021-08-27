@@ -1,10 +1,12 @@
 # vim: set sts=2 ts=8 sw=2 tw=99 et ft=python:
 import os.path
 
-project = Extension.HL2Project(builder, 'impactfix.ext')
+projectName = 'impactfix'
+
+project = Extension.HL2Project(builder, projectName + '.ext')
 project.sources += [
   'extension.cpp',
-  os.path.join('smsdk', 'smsdk_ext.cpp'),
+  os.path.join(Extension.sm_root, 'public', 'smsdk_ext.cpp'),
   os.path.join(Extension.sm_root, 'public', 'CDetour', 'detours.cpp'),
   os.path.join(Extension.sm_root, 'public', 'asm', 'asm.c'),
 ]
@@ -23,6 +25,6 @@ if os.path.isdir(libudis_folder):
 
 for sdk_name in Extension.sdks:
   sdk = Extension.sdks[sdk_name]
-  Extension.HL2Config(project, 'impactfix.ext.' + sdk.ext, sdk)
+  Extension.HL2Config(project, projectName + '.ext.' + sdk.ext, sdk)
 
 Extension.extensions = builder.Add(project)

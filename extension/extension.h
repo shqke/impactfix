@@ -8,7 +8,7 @@
 #include <extensions/IBinTools.h>
 #include <amtl/am-string.h>
 
-class CImpactFix :
+class CExtension :
 	public SDKExtension
 {
 public: // SourceHook callbacks
