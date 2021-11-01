@@ -23,7 +23,7 @@ Installation
 Test Cases
 ------
 #### c2m2 custom immovable prop dynamic -> stop (Asleep = true)
-```json
+```
 Hit: 1719 ("prop_dynamic")
   Movetype: 7
   Motion Enabled: true
@@ -34,7 +34,7 @@ Hit: 1719 ("prop_dynamic")
 ```
 ---
 #### c1m1 death charge glass (lower floor) -> continue (IsAlive = false)
-```json
+```
 Hit: 227 ("func_breakable")
   Movetype: 7
   Motion Enabled: true
@@ -45,7 +45,7 @@ Hit: 227 ("func_breakable")
 ```
 ------
 #### c1m1 death charge glass (top floor) -> continue (IsAlive = false)
-```json
+```
 Hit: 233 ("prop_physics")
   Movetype: 6 -> 0
   Motion Enabled: false -> true
@@ -56,7 +56,7 @@ Hit: 233 ("prop_physics")
 ```
 ------
 #### c10m4 breakable window -> continue (IsAlive = false)
-```json
+```
 Hit: 375 ("prop_physics")
   Movetype: 6 -> 0
   Motion Enabled: false -> true
@@ -67,7 +67,7 @@ Hit: 375 ("prop_physics")
 ```
 ------
 #### c10m4 breakable wooden door near bus -> continue (IsAlive = false)
-```json
+```
 Hit: 414 ("func_breakable")
   Movetype: 7
   Motion Enabled: true
@@ -78,7 +78,7 @@ Hit: 414 ("func_breakable")
 ```
 ------
 #### c1m4 unbreakable window by charger -> stop (Asleep = true)
-```json
+```
 Hit: 159 ("func_breakable")
   Movetype: 7
   Motion Enabled: true
@@ -89,7 +89,7 @@ Hit: 159 ("func_breakable")
 ```
 ------
 #### c2m2 hittables -> continue (Asleep = false)
-```json
+```
 Hit: 840 ("prop_physics")
   Movetype: 6
   Motion Enabled: true
@@ -100,7 +100,7 @@ Hit: 840 ("prop_physics")
 ```
 ------
 #### c10m5 immovable physics prop -> stop (Asleep = true)
-```json
+```
 Hit: 261 ("prop_physics")
   Movetype: 6
   Motion Enabled: true
@@ -111,7 +111,7 @@ Hit: 261 ("prop_physics")
 ```
 ------
 #### c6m1 wedding chairs -> continue (Asleep = false)
-```json
+```
 Hit: 81 ("prop_physics")
   Movetype: 6
   Motion Enabled: false -> true
@@ -122,7 +122,7 @@ Hit: 81 ("prop_physics")
 ```
 ------
 #### c8m5 minigun -> stop (Asleep = true)
-```json
+```
 Hit: 150 ("prop_minigun_l4d1")
   Movetype: 7
   Motion Enabled: true
