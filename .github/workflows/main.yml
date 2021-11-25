@@ -145,5 +145,5 @@ jobs:
       - name: Uploading package
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ github.event.repository.name }}-sm${{ matrix.sm_version }}-${{ matrix.os_short }}-${{ env.GITHUB_SHA_SHORT }}
+          name: impactfix-sm${{ matrix.sm_version }}-${{ matrix.os_short }}-${{ env.GITHUB_SHA_SHORT }}
           path: src/build/package
