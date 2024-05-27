@@ -9,7 +9,7 @@ Video Demonstration
 Requirements
 ------
 - [MM:Source (1.10+)](https://www.sourcemm.net/)
-- [SourceMod (1.8+)](https://www.sourcemod.net/)
+- [SourceMod (1.9+)](https://www.sourcemod.net/)
 
 Supported Games
 ------
