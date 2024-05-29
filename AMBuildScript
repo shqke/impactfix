@@ -36,7 +36,6 @@ CSGO = {
 }
 
 PossibleSDKs = {
-  'l4d':  SDK('HL2SDKL4D', '2.l4d', '12', 'LEFT4DEAD', WinLinuxMac, 'l4d'),
   'l4d2': SDK('HL2SDKL4D2', '2.l4d2', '15', 'LEFT4DEAD2', WinLinuxMac, 'l4d2'),
 }
 
@@ -232,6 +231,9 @@ class ExtensionConfig(object):
       '-Wno-register',
       '-fvisibility-inlines-hidden',
     ]
+    cxx.linkflags += [
+      '-static-libstdc++'
+    ]
 
     have_gcc = cxx.family == 'gcc'
     have_clang = cxx.family == 'clang'
@@ -261,10 +263,10 @@ class ExtensionConfig(object):
 
     # Work around SDK warnings.
     if cxx.version >= 'clang-10.0' or cxx.version >= 'apple-clang-12.0':
-        cxx.cflags += [
-            '-Wno-implicit-int-float-conversion',
-            '-Wno-tautological-overlap-compare',
-        ]
+      cxx.cflags += [
+        '-Wno-implicit-int-float-conversion',
+        '-Wno-tautological-overlap-compare',
+      ]
 
     if have_gcc:
       cxx.cflags += ['-mfpmath=sse']
@@ -298,6 +300,7 @@ class ExtensionConfig(object):
       '/std:c++17',
     ]
     cxx.linkflags += [
+      '/MACHINE:X86',
       'kernel32.lib',
       'user32.lib',
       'gdi32.lib',
