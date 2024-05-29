@@ -22,6 +22,7 @@ jobs:
       matrix:
         os:
           - ubuntu-latest
+          - ubuntu-20.04
           - windows-latest
           
         sm_version:
@@ -34,6 +35,8 @@ jobs:
           # Use MM:Source 1.10 as base version
           - meta_version: "1.10"
             meta_branch: "1.10-dev"
+            
+          - os_short: linux
             
           - sm_version: latest
             sm_branch: master
@@ -49,8 +52,8 @@ jobs:
           - sm_version: "1.11"
             sm_branch: "1.11-dev"
             
-          - os: ubuntu-latest
-            os_short: linux
+          - os: ubuntu-20.04
+            os_short: oldlinux
             
           - os: windows-latest
             os_short: win
