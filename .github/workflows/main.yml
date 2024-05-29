@@ -96,18 +96,11 @@ jobs:
           pip install git+https://github.com/alliedmodders/ambuild
           
       - name: Getting hl2sdk-l4d2
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           repository: alliedmodders/hl2sdk
           ref: l4d2
           path: hl2sdk-l4d2
-          
-      - name: Getting hl2sdk-l4d
-        uses: actions/checkout@v4
-        with:
-          repository: alliedmodders/hl2sdk
-          ref: l4d
-          path: hl2sdk-l4d
           
       - name: Getting own repository
         uses: actions/checkout@v4
